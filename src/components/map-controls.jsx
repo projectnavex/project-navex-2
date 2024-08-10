@@ -32,33 +32,35 @@ export default function MapControls({
           }
         }}
       />
-      <button
-        className="mr-3 w-20 rounded-3xl border-2 bg-green p-2 text-[#fff] duration-150 hover:bg-[#284f3e]"
-        onClick={() => {
-          // EPSG.io uses JSONP to bypass CORS.
-          let easting = `6${mgr.slice(0, 4)}0`;
-          let northing = `1${mgr.slice(4, 8)}0`;
-          let url = `https://epsg.io/trans?x=${easting}&y=${northing}&s_srs=${SOURCE_EPSG}&t_srs=${DESTINATION_EPSG}`;
-          jsonp(url, null, (err, latLng) => {
-            let { x, y, z } = latLng;
-            handleAddMarker({ lat: parseFloat(y), lng: parseFloat(x) });
-          });
-          setMgr("");
-          setStatusMessage(SUCCESS_MESSAGE);
-        }}
-      >
-        Plot
-      </button>
-      <button
-        className="mr-3 w-20 rounded-3xl border-2 bg-red p-2 text-[#fff] duration-150 hover:bg-[#9f3b27]"
-        onClick={() => {
-          handleDeleteAllMarkers();
-          setStatusMessage(DEFAULT_MESSAGE);
-        }}
-      >
-        Clear
-      </button>
-      <IntervalControls handleChangeInterval={handleChangeInterval} />
+      <div className="mt-3 inline-block sm:mt-0">
+        <button
+          className="mr-3 w-20 rounded-3xl border-2 bg-green p-2 text-[#fff] duration-150 hover:bg-[#284f3e]"
+          onClick={() => {
+            // EPSG.io uses JSONP to bypass CORS.
+            let easting = `6${mgr.slice(0, 4)}0`;
+            let northing = `1${mgr.slice(4, 8)}0`;
+            let url = `https://epsg.io/trans?x=${easting}&y=${northing}&s_srs=${SOURCE_EPSG}&t_srs=${DESTINATION_EPSG}`;
+            jsonp(url, null, (err, latLng) => {
+              let { x, y, z } = latLng;
+              handleAddMarker({ lat: parseFloat(y), lng: parseFloat(x) });
+            });
+            setMgr("");
+            setStatusMessage(SUCCESS_MESSAGE);
+          }}
+        >
+          Plot
+        </button>
+        <button
+          className="mr-3 w-20 rounded-3xl border-2 bg-red p-2 text-[#fff] duration-150 hover:bg-[#9f3b27]"
+          onClick={() => {
+            handleDeleteAllMarkers();
+            setStatusMessage(DEFAULT_MESSAGE);
+          }}
+        >
+          Clear
+        </button>
+        <IntervalControls handleChangeInterval={handleChangeInterval} />
+      </div>
     </div>
   );
 }
