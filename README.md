@@ -18,6 +18,13 @@ Update packages.
 npm update
 ```
 
+Create `.env` file with the following environment variables:
+
+```
+VITE_GOOGLE_MAPS_API_KEY=
+VITE_MAPTILER_API_KEY=
+```
+
 Run locally!
 
 ```bash

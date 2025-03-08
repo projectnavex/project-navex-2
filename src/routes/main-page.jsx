@@ -6,7 +6,7 @@ import NavexMap from "../components/navex-map";
 import NDS from "../components/nds";
 import TrainingAreaDropdown from "../components/training-area-dropdown";
 
-const API_KEY = import.meta.env.VITE_API_KEY;
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const TRAINING_AREAS = {
   amaKeng: {
     name: "Ama Keng",
@@ -64,7 +64,7 @@ export default function MainPage() {
 
   return (
     <div>
-      <APIProvider apiKey={API_KEY}>
+      <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
         <TrainingAreaDropdown trainingAreas={TRAINING_AREAS} />
         <NavexMap
           defaultLocation={TRAINING_AREAS.lorongAsrama.location}
