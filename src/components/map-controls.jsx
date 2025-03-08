@@ -3,8 +3,8 @@ import { useState } from "react";
 import IntervalControls from "./interval-controls";
 
 const MAPTILER_API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
-const SOURCE_EPSG = 3168; // Kertau (RSO) / RSO Malaya
-const DESTINATION_EPSG = 4326; // WGS 84
+const SOURCE_CRS = 3168; // Kertau (RSO) / RSO Malaya
+const DESTINATION_CRS = 4326; // WGS 84
 const DEFAULT_MESSAGE = "Manually input your points.";
 const SUCCESS_MESSAGE = "Sucessfully plotted MGR!";
 const FAILURE_MESSAGE = "Oops, something went wrong!";
@@ -48,8 +48,8 @@ export default function MapControls({
 
             let url = `https://api.maptiler.com/coordinates/transform/` +
               `${easting},${northing}.json` +
-              `?s_srs=${SOURCE_EPSG}` +
-              `&t_srs=${DESTINATION_EPSG}` +
+              `?s_srs=${SOURCE_CRS}` +
+              `&t_srs=${DESTINATION_CRS}` +
               `&key=${MAPTILER_API_KEY}`;
 
             fetch(url)
