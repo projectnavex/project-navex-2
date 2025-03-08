@@ -1,12 +1,14 @@
-import jsonp from "jsonp";
 import { useState } from "react";
 
 import IntervalControls from "./interval-controls";
 
+const MAPTILER_API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 const SOURCE_EPSG = 3168; // Kertau (RSO) / RSO Malaya
 const DESTINATION_EPSG = 4326; // WGS 84
 const DEFAULT_MESSAGE = "Manually input your points.";
 const SUCCESS_MESSAGE = "Sucessfully plotted MGR!";
+const FAILURE_MESSAGE = "Oops, something went wrong!";
+const INVALID_MGR_MESSAGE = "Oops, MGR must be an 8 digit number!";
 
 export default function MapControls({
   handleAddMarker,
@@ -36,16 +38,33 @@ export default function MapControls({
         <button
           className="mr-3 w-20 rounded-3xl border-2 bg-green p-2 text-[#fff] duration-150 hover:bg-[#284f3e]"
           onClick={() => {
-            // EPSG.io uses JSONP to bypass CORS.
+            if (mgr.length !== 8) {
+              setStatusMessage(INVALID_MGR_MESSAGE);
+              return;
+            }
+
             let easting = `6${mgr.slice(0, 4)}0`;
             let northing = `1${mgr.slice(4, 8)}0`;
-            let url = `https://epsg.io/trans?x=${easting}&y=${northing}&s_srs=${SOURCE_EPSG}&t_srs=${DESTINATION_EPSG}`;
-            jsonp(url, null, (err, latLng) => {
-              let { x, y, z } = latLng;
-              handleAddMarker({ lat: parseFloat(y), lng: parseFloat(x) });
-            });
-            setMgr("");
-            setStatusMessage(SUCCESS_MESSAGE);
+
+            let url = `https://api.maptiler.com/coordinates/transform/` +
+              `${easting},${northing}.json` +
+              `?s_srs=${SOURCE_EPSG}` +
+              `&t_srs=${DESTINATION_EPSG}` +
+              `&key=${MAPTILER_API_KEY}`;
+
+            fetch(url)
+              .then(response => response.json())
+              .then(responsePayload => {
+                let { x, y, z } = responsePayload.results[0];
+                handleAddMarker({ lat: parseFloat(y), lng: parseFloat(x) });
+
+                setStatusMessage(SUCCESS_MESSAGE);
+                setMgr("");
+              })
+              .catch(error => {
+                setStatusMessage(FAILURE_MESSAGE);
+                console.error(error);
+              });
           }}
         >
           Plot

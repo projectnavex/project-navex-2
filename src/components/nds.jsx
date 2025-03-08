@@ -1,6 +1,6 @@
-import jsonp from "jsonp";
 import { useEffect, useState } from "react";
 
+const MAPTILER_API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 const SOURCE_EPSG = 4326; // WGS 84
 const DESTINATION_EPSG = 3168; // Kertau (RSO) / RSO Malaya
 
@@ -20,60 +20,65 @@ export default function NDS({ markers, interval }) {
         return accumulator + `${lng},${lat};`;
       }, "")
       .slice(0, -1);
-    let url = `https://epsg.io/trans?data=${latLngs}&s_srs=${SOURCE_EPSG}&t_srs=${DESTINATION_EPSG}`;
+    let url = `https://api.maptiler.com/coordinates/transform/${latLngs}.json` +
+      `?s_srs=${SOURCE_EPSG}` +
+      `&t_srs=${DESTINATION_EPSG}` +
+      `&key=${MAPTILER_API_KEY}`;
 
-    jsonp(url, null, (err, mgrs) => {
-      setLoading(false);
+    fetch(url)
+      .then(response => response.json())
+      .then(responsePayload => {
+        setLoading(false);
 
-      if (err) {
-        console.error(err);
-        return;
-      }
+        const mgrs = responsePayload.results;
 
-      // Convert all MGRs to floating point numbers.
-      for (let i = 0; i < mgrs.length; i++) {
-        let { x, y } = mgrs[i];
-        mgrs[i] = {
-          x: parseFloat(x.toString().slice(1, 5)),
-          y: parseFloat(y.toString().slice(1, 5)),
-        };
-      }
-
-      let data = [];
-      for (let i = 1; i < mgrs.length; i++) {
-        let x = mgrs[i - 1].x;
-        let y = mgrs[i - 1].y;
-        let xDiff = mgrs[i].x - x;
-        let yDiff = mgrs[i].y - y;
-        let distance = (xDiff ** 2 + yDiff ** 2) ** 0.5 / (interval / 10);
-        let azimuth = getAzimuth(xDiff, yDiff);
-        let xIncrement = xDiff / distance;
-        let yIncrement = yDiff / distance;
-
-        for (let j = 0; j < Math.floor(distance); j++) {
-          let start = { x, y };
-          x += xIncrement;
-          y += yIncrement;
-          let end = { x, y };
-          data.push({ start, end, azimuth, interval, count: j });
+        // Convert all MGRs to floating point numbers.
+        for (let i = 0; i < mgrs.length; i++) {
+          let { x, y } = mgrs[i];
+          mgrs[i] = {
+            x: parseFloat(x.toString().slice(1, 5)),
+            y: parseFloat(y.toString().slice(1, 5)),
+          };
         }
 
-        let remainder = distance - Math.floor(distance);
-        let start = { x, y };
-        x += remainder * xIncrement;
-        y += remainder * yIncrement;
-        let end = { x, y };
-        data.push({
-          start,
-          end,
-          azimuth,
-          interval: Math.round(remainder * interval),
-          count: 0,
-        });
-      }
+        let data = [];
+        for (let i = 1; i < mgrs.length; i++) {
+          let x = mgrs[i - 1].x;
+          let y = mgrs[i - 1].y;
+          let xDiff = mgrs[i].x - x;
+          let yDiff = mgrs[i].y - y;
+          let distance = (xDiff ** 2 + yDiff ** 2) ** 0.5 / (interval / 10);
+          let azimuth = getAzimuth(xDiff, yDiff);
+          let xIncrement = xDiff / distance;
+          let yIncrement = yDiff / distance;
 
-      setNdsData(data);
-    });
+          for (let j = 0; j < Math.floor(distance); j++) {
+            let start = { x, y };
+            x += xIncrement;
+            y += yIncrement;
+            let end = { x, y };
+            data.push({ start, end, azimuth, interval, count: j });
+          }
+
+          let remainder = distance - Math.floor(distance);
+          let start = { x, y };
+          x += remainder * xIncrement;
+          y += remainder * yIncrement;
+          let end = { x, y };
+          data.push({
+            start,
+            end,
+            azimuth,
+            interval: Math.round(remainder * interval),
+            count: 0,
+          });
+        }
+
+        setNdsData(data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
   }, [markers, interval]);
 
   return (
