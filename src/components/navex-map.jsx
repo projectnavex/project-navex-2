@@ -128,7 +128,7 @@ export default function NavexMap({
   return (
     <Map
       styles={MAP_STYLES}
-      className="my-5 h-[450px] w-screen md:h-[75vh]"
+      className="my-5 h-[450px] w-full md:h-[75vh]"
       onClick={e => handleAddMarker(e.detail.latLng)}
       defaultZoom={15}
       defaultCenter={defaultLocation}
