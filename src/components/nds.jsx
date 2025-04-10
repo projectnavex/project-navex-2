@@ -15,6 +15,7 @@ export default function NDS({ markers, interval }) {
     const apiKey = sessionStorage.getItem("userApiKey");
 
     if (!apiKey) {
+      setStatusMessage(FAILURE_MESSAGE);
       return;
     }
 
