@@ -1,4 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
+import ApiKeyManagement from "../components/api-key-management.jsx";
 
 export default function Root() {
   return (
@@ -8,6 +9,9 @@ export default function Root() {
           <Link to={"/"}>Project Navex</Link>
         </h1>
         <p className="mb-5 text-center">Generate your NDS with a few clicks!</p>
+
+        <ApiKeyManagement />
+
         <Outlet />
       </div>
       <footer className="bg-black pb-10 pt-6 text-center">

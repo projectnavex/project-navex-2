@@ -1,14 +1,23 @@
 import { useEffect, useState } from "react";
 
-const MAPTILER_API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
+// Disabled temporarily
+// const MAPTILER_API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 const SOURCE_CRS = 4326; // WGS 84
 const DESTINATION_CRS = 3168; // Kertau (RSO) / RSO Malaya
+const FAILURE_MESSAGE = "Oops, something went wrong! Please make sure you have your API key set correctly.";
 
 export default function NDS({ markers, interval }) {
   let [ndsData, setNdsData] = useState([]);
   let [loading, setLoading] = useState(false);
+  let [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
+    const apiKey = sessionStorage.getItem("userApiKey");
+
+    if (!apiKey) {
+      return;
+    }
+
     if (markers.length < 2) {
       return;
     }
@@ -23,11 +32,12 @@ export default function NDS({ markers, interval }) {
     let url = `https://api.maptiler.com/coordinates/transform/${latLngs}.json` +
       `?s_srs=${SOURCE_CRS}` +
       `&t_srs=${DESTINATION_CRS}` +
-      `&key=${MAPTILER_API_KEY}`;
+      `&key=${apiKey}`;
 
     fetch(url)
       .then(response => response.json())
       .then(responsePayload => {
+        setStatusMessage("");
         setLoading(false);
 
         const mgrs = responsePayload.results;
@@ -77,38 +87,42 @@ export default function NDS({ markers, interval }) {
         setNdsData(data);
       })
       .catch(error => {
+        setStatusMessage(FAILURE_MESSAGE);
         console.error(error);
       });
   }, [markers, interval]);
 
   return (
-    <table
-      className={`mx-auto my-7 w-11/12 border-2 border-solid border-black ${loading && "opacity-50"}`}
-    >
-      <thead className="bg-green">
-        <tr>
-          <TableCell>No.</TableCell>
-          <TableCell>Start MGR</TableCell>
-          <TableCell>End MGR</TableCell>
-          <TableCell>Mil</TableCell>
-          <TableCell>Dist.</TableCell>
-        </tr>
-      </thead>
-      <tbody>
-        {ndsData.map(({ start, end, azimuth, interval, count }, index) => (
-          <tr
-            key={index}
-            className={`${index % 2 == 0 && "bg-[#212121]"} ${count == 0 && "text-yellow-100"}`}
-          >
-            <TableCell>{index}</TableCell>
-            <TableCell>{getFormattedMgr(start)}</TableCell>
-            <TableCell>{getFormattedMgr(end)}</TableCell>
-            <TableCell>{azimuth}</TableCell>
-            <TableCell>{interval}</TableCell>
+    <>
+      {statusMessage && <p className="text-center mt-5">{statusMessage}</p>}
+      <table
+        className={`mx-auto my-7 w-11/12 border-2 border-solid border-black ${loading && "opacity-50"}`}
+      >
+        <thead className="bg-green">
+          <tr>
+            <TableCell>No.</TableCell>
+            <TableCell>Start MGR</TableCell>
+            <TableCell>End MGR</TableCell>
+            <TableCell>Mil</TableCell>
+            <TableCell>Dist.</TableCell>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {ndsData.map(({ start, end, azimuth, interval, count }, index) => (
+            <tr
+              key={index}
+              className={`${index % 2 == 0 && "bg-[#212121]"} ${count == 0 && "text-yellow-100"}`}
+            >
+              <TableCell>{index}</TableCell>
+              <TableCell>{getFormattedMgr(start)}</TableCell>
+              <TableCell>{getFormattedMgr(end)}</TableCell>
+              <TableCell>{azimuth}</TableCell>
+              <TableCell>{interval}</TableCell>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 
