@@ -1,12 +1,10 @@
-import { APIProvider } from "@vis.gl/react-google-maps";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import MapControls from "../components/map-controls";
 import NavexMap from "../components/navex-map";
 import NDS from "../components/nds";
 import TrainingAreaDropdown from "../components/training-area-dropdown";
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const TRAINING_AREAS = {
   amaKeng: {
     name: "Ama Keng",
@@ -39,6 +37,7 @@ const TRAINING_AREAS = {
 };
 
 export default function MainPage() {
+  let mapRef = useRef(null);
   let [markers, setMarkers] = useState([]);
   let [interval, setInterval] = useState(100);
 
@@ -64,22 +63,21 @@ export default function MainPage() {
 
   return (
     <div>
-      <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-        <TrainingAreaDropdown trainingAreas={TRAINING_AREAS} />
-        <NavexMap
-          defaultLocation={TRAINING_AREAS.lorongAsrama.location}
-          markers={markers}
-          handleAddMarker={handleAddMarker}
-          handleChangeMarker={handleChangeMarker}
-          handleDeleteMarker={handleDeleteMarker}
-        />
-        <MapControls
-          handleAddMarker={handleAddMarker}
-          handleDeleteAllMarkers={handleDeleteAllMarkers}
-          handleChangeInterval={handleChangeInterval}
-        />
-        {markers.length > 1 && <NDS markers={markers} interval={interval} />}
-      </APIProvider>
+      <TrainingAreaDropdown trainingAreas={TRAINING_AREAS} mapRef={mapRef} />
+      <NavexMap
+        defaultLocation={TRAINING_AREAS.lorongAsrama.location}
+        markers={markers}
+        handleAddMarker={handleAddMarker}
+        handleChangeMarker={handleChangeMarker}
+        handleDeleteMarker={handleDeleteMarker}
+        mapRef={mapRef}
+      />
+      <MapControls
+        handleAddMarker={handleAddMarker}
+        handleDeleteAllMarkers={handleDeleteAllMarkers}
+        handleChangeInterval={handleChangeInterval}
+      />
+      {markers.length > 1 && <NDS markers={markers} interval={interval} />}
     </div>
   );
 }

@@ -1,8 +1,6 @@
-import { useMap } from "@vis.gl/react-google-maps";
 import { useState } from "react";
 
-export default function TrainingAreaDropdown({ trainingAreas }) {
-  let map = useMap();
+export default function TrainingAreaDropdown({ trainingAreas, mapRef }) {
   let [trainingArea, setTrainingArea] = useState(trainingAreas.lorongAsrama);
   let [menuOpen, setMenuOpen] = useState(false);
 
@@ -29,8 +27,9 @@ export default function TrainingAreaDropdown({ trainingAreas }) {
               onClick={() => {
                 setTrainingArea(area);
                 setMenuOpen(false);
-                map.setZoom(15);
-                map.panTo(area.location);
+                if (mapRef.current) {
+                  mapRef.current.flyTo(area.location, 15);
+                }
               }}
             >
               {area.name}
