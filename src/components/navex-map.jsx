@@ -13,6 +13,8 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+import TileDropdown from "./tile-dropdown";
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -63,7 +65,7 @@ const TILE_PROVIDERS = [
 ];
 
 function MapSetup({ mapRef }) {
-  const map = useMap();
+  let map = useMap();
   useEffect(() => {
     mapRef.current = map;
     map.doubleClickZoom.disable();
@@ -82,13 +84,13 @@ function MapClickHandler({ handleAddMarker }) {
 }
 
 function DraggableMarker({ marker, handleChangeMarker, handleDeleteMarker }) {
-  const markerRef = useRef(null);
-  const eventHandlers = useMemo(
+  let markerRef = useRef(null);
+  let eventHandlers = useMemo(
     () => ({
       dragend() {
-        const m = markerRef.current;
+        let m = markerRef.current;
         if (m != null) {
-          const latlng = m.getLatLng();
+          let latlng = m.getLatLng();
           handleChangeMarker(marker.id, { lat: latlng.lat, lng: latlng.lng });
         }
       },
@@ -109,43 +111,6 @@ function DraggableMarker({ marker, handleChangeMarker, handleDeleteMarker }) {
   );
 }
 
-function TileDropdown({ tile, setTile }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  return (
-    <div className="relative mx-auto w-52">
-      <div
-        className="flex cursor-pointer select-none flex-row justify-between rounded-lg bg-[#2a2f3b] p-5 duration-150 hover:bg-[#323741]"
-        onClick={() => setMenuOpen(!menuOpen)}
-      >
-        <span>{tile.name}</span>
-        <svg
-          className={`${menuOpen ? "rotate-180 transform" : null} relative top-[2px] h-5 w-5 transition-transform`}
-          fill="currentColor"
-        >
-          <polygon points="5,7 10,12 15,7" />
-        </svg>
-      </div>
-      {menuOpen && (
-        <ul className="absolute left-0 right-0 z-40 rounded-lg bg-[#323741] p-2 shadow-lg">
-          {TILE_PROVIDERS.map(provider => (
-            <li
-              className={`${provider.id === tile.id ? "bg-[#23242a]" : null} cursor-pointer rounded-lg p-3 duration-100 hover:bg-[#2a2d35]`}
-              key={provider.id}
-              onClick={() => {
-                setTile(provider);
-                setMenuOpen(false);
-              }}
-            >
-              {provider.name}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 export default function NavexMap({
   defaultLocation,
   markers,
@@ -153,12 +118,20 @@ export default function NavexMap({
   handleChangeMarker,
   handleDeleteMarker,
   mapRef,
+  openDropdown,
+  setOpenDropdown,
 }) {
-  const [tile, setTile] = useState(TILE_PROVIDERS[0]);
+  let [tile, setTile] = useState(TILE_PROVIDERS[0]);
 
   return (
     <div className="mt-3">
-      <TileDropdown tile={tile} setTile={setTile} />
+      <TileDropdown
+        providers={TILE_PROVIDERS}
+        tile={tile}
+        setTile={setTile}
+        openDropdown={openDropdown}
+        setOpenDropdown={setOpenDropdown}
+      />
       <MapContainer
         className="z-0 my-5 h-[450px] w-full md:h-[75vh]"
         center={[defaultLocation.lat, defaultLocation.lng]}

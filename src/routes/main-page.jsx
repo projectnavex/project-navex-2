@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import MapControls from "../components/map-controls";
 import NavexMap from "../components/navex-map";
@@ -41,20 +41,19 @@ export default function MainPage() {
   let markerIdRef = useRef(0);
   let [markers, setMarkers] = useState([]);
   let [interval, setInterval] = useState(100);
+  let [openDropdown, setOpenDropdown] = useState(null);
 
-  function handleAddMarker(position) {
-    setMarkers([...markers, { id: markerIdRef.current++, position: position }]);
-  }
-  function handleChangeMarker(id, position) {
-    setMarkers(
-      markers.map(marker =>
-        marker.id === id ? { id: id, position: position } : marker,
-      ),
+  let handleAddMarker = useCallback(position => {
+    setMarkers(prev => [...prev, { id: markerIdRef.current++, position }]);
+  }, []);
+  let handleChangeMarker = useCallback((id, position) => {
+    setMarkers(prev =>
+      prev.map(marker => (marker.id === id ? { id, position } : marker)),
     );
-  }
-  function handleDeleteMarker(id) {
-    setMarkers(markers.filter(marker => marker.id !== id));
-  }
+  }, []);
+  let handleDeleteMarker = useCallback(id => {
+    setMarkers(prev => prev.filter(marker => marker.id !== id));
+  }, []);
   function handleDeleteAllMarkers() {
     setMarkers([]);
   }
@@ -64,7 +63,12 @@ export default function MainPage() {
 
   return (
     <div>
-      <TrainingAreaDropdown trainingAreas={TRAINING_AREAS} mapRef={mapRef} />
+      <TrainingAreaDropdown
+        trainingAreas={TRAINING_AREAS}
+        mapRef={mapRef}
+        openDropdown={openDropdown}
+        setOpenDropdown={setOpenDropdown}
+      />
       <NavexMap
         defaultLocation={TRAINING_AREAS.lorongAsrama.location}
         markers={markers}
@@ -72,6 +76,8 @@ export default function MainPage() {
         handleChangeMarker={handleChangeMarker}
         handleDeleteMarker={handleDeleteMarker}
         mapRef={mapRef}
+        openDropdown={openDropdown}
+        setOpenDropdown={setOpenDropdown}
       />
       <MapControls
         handleAddMarker={handleAddMarker}
