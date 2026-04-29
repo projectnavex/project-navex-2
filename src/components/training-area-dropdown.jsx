@@ -28,7 +28,7 @@ export default function TrainingAreaDropdown({ trainingAreas, mapRef }) {
                 setTrainingArea(area);
                 setMenuOpen(false);
                 if (mapRef.current) {
-                  mapRef.current.flyTo(area.location, 15);
+                  mapRef.current.flyTo(area.location, 15, { duration: 0.5 });
                 }
               }}
             >

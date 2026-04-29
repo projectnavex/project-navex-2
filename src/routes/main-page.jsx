@@ -38,11 +38,12 @@ const TRAINING_AREAS = {
 
 export default function MainPage() {
   let mapRef = useRef(null);
+  let markerIdRef = useRef(0);
   let [markers, setMarkers] = useState([]);
   let [interval, setInterval] = useState(100);
 
   function handleAddMarker(position) {
-    setMarkers([...markers, { id: crypto.randomUUID(), position: position }]);
+    setMarkers([...markers, { id: markerIdRef.current++, position: position }]);
   }
   function handleChangeMarker(id, position) {
     setMarkers(
