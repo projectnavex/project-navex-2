@@ -1,92 +1,115 @@
-import { Map, Marker, useMap, useMapsLibrary } from "@vis.gl/react-google-maps";
-import { useEffect, useRef } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polyline,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
+import L from "leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const SINGAPORE_BOUNDS = {
-  north: 1.466878,
-  south: 1.21186,
-  west: 103.584676,
-  east: 104.114079,
-};
-const MAP_STYLES = [
-  { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+import TileDropdown from "./tile-dropdown";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const SINGAPORE_BOUNDS = [
+  [1.21186, 103.584676],
+  [1.466878, 104.114079],
+];
+
+const TILE_PROVIDERS = [
   {
-    featureType: "administrative.locality",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }],
+    id: "topomap",
+    name: "OpenTopoMap",
+    url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    attribution:
+      'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
   },
   {
-    featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }],
+    id: "cartoDark",
+    name: "CartoDB Dark",
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
   },
   {
-    featureType: "poi.park",
-    elementType: "geometry",
-    stylers: [{ color: "#263c3f" }],
+    id: "cartoVoyager",
+    name: "CartoDB Voyager",
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
   },
   {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#6b9a76" }],
+    id: "esriTopo",
+    name: "ESRI Topo",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Tiles &copy; <a href="https://www.esri.com/">Esri</a>',
   },
   {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#38414e" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#212a37" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#9ca5b3" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#746855" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#1f2835" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#f3d19c" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "geometry",
-    stylers: [{ color: "#2f3948" }],
-  },
-  {
-    featureType: "transit.station",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#17263c" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#515c6d" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#17263c" }],
+    id: "osm",
+    name: "OpenStreetMap",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   },
 ];
+
+function MapSetup({ mapRef }) {
+  let map = useMap();
+  useEffect(() => {
+    mapRef.current = map;
+    map.doubleClickZoom.disable();
+    map.keyboard.disable();
+  }, [map, mapRef]);
+  return null;
+}
+
+function MapClickHandler({ handleAddMarker }) {
+  useMapEvents({
+    click(e) {
+      handleAddMarker({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return null;
+}
+
+function DraggableMarker({ marker, handleChangeMarker, handleDeleteMarker }) {
+  let markerRef = useRef(null);
+  let eventHandlers = useMemo(
+    () => ({
+      dragend() {
+        let m = markerRef.current;
+        if (m != null) {
+          let latlng = m.getLatLng();
+          handleChangeMarker(marker.id, { lat: latlng.lat, lng: latlng.lng });
+        }
+      },
+      click() {
+        handleDeleteMarker(marker.id);
+      },
+    }),
+    [marker.id, handleChangeMarker, handleDeleteMarker],
+  );
+
+  return (
+    <Marker
+      position={marker.position}
+      draggable={true}
+      eventHandlers={eventHandlers}
+      ref={markerRef}
+    />
+  );
+}
 
 export default function NavexMap({
   defaultLocation,
@@ -94,65 +117,47 @@ export default function NavexMap({
   handleAddMarker,
   handleChangeMarker,
   handleDeleteMarker,
+  mapRef,
+  openDropdown,
+  setOpenDropdown,
 }) {
-  let map = useMap();
-  let mapsLib = useMapsLibrary("maps");
-  let markerPathRef = useRef(null);
-
-  useEffect(() => {
-    if (!mapsLib || !map) {
-      return;
-    }
-    if (markerPathRef.current) {
-      markerPathRef.current.getPath().clear();
-    }
-    markerPathRef.current = new mapsLib.Polyline({
-      path: markers.map(marker => marker.position),
-      strokeColor: "#000000",
-      strokeOpacity: 0,
-      icons: [
-        {
-          icon: {
-            path: "M 0, -1 0, 1",
-            strokeOpacity: 1,
-            scale: 3,
-          },
-          offset: "0",
-          repeat: "20px",
-        },
-      ],
-    });
-    markerPathRef.current.setMap(map);
-  }, [markers]);
+  let [tile, setTile] = useState(TILE_PROVIDERS[0]);
 
   return (
-    <Map
-      styles={MAP_STYLES}
-      className="my-5 h-[450px] w-full md:h-[75vh]"
-      onClick={e => handleAddMarker(e.detail.latLng)}
-      defaultZoom={15}
-      defaultCenter={defaultLocation}
-      restriction={{ latLngBounds: SINGAPORE_BOUNDS, strictBounds: false }}
-      mapTypeControl={true}
-      clickableIcons={false}
-      disableDefaultUI={true}
-      disableDoubleClickZoom={true}
-      keyboardShortcuts={false}
-    >
-      {markers.map(marker => (
-        <Marker
-          key={marker.id}
-          position={marker.position}
-          draggable={true}
-          onDragEnd={e =>
-            handleChangeMarker(marker.id, {
-              lat: e.latLng.lat(),
-              lng: e.latLng.lng(),
-            })
-          }
-          onClick={() => handleDeleteMarker(marker.id)}
-        />
-      ))}
-    </Map>
+    <div className="mt-3">
+      <TileDropdown
+        providers={TILE_PROVIDERS}
+        tile={tile}
+        setTile={setTile}
+        openDropdown={openDropdown}
+        setOpenDropdown={setOpenDropdown}
+      />
+      <MapContainer
+        className="z-0 my-5 h-[450px] w-full md:h-[75vh]"
+        center={[defaultLocation.lat, defaultLocation.lng]}
+        zoom={defaultLocation.zoom || 15}
+        maxBounds={SINGAPORE_BOUNDS}
+        maxBoundsViscosity={0.5}
+        zoomControl={true}
+      >
+        <TileLayer key={tile.id} url={tile.url} attribution={tile.attribution} />
+        <MapSetup mapRef={mapRef} />
+        <MapClickHandler handleAddMarker={handleAddMarker} />
+        {markers.length > 1 && (
+          <Polyline
+            positions={markers.map(m => [m.position.lat, m.position.lng])}
+            pathOptions={{ color: "#000000", weight: 3, dashArray: "10, 10" }}
+          />
+        )}
+        {markers.map(marker => (
+          <DraggableMarker
+            key={marker.id}
+            marker={marker}
+            handleChangeMarker={handleChangeMarker}
+            handleDeleteMarker={handleDeleteMarker}
+          />
+        ))}
+      </MapContainer>
+    </div>
   );
 }
